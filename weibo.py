@@ -8,7 +8,7 @@ import re
 #id='2360812967'#可以通过昵称查找id
 count = 0
 scraw_ID = set(['2360812967',])#待爬id
-finish_ID = set()#已爬id
+finish_ID = set()#已爬id 120.79.245.47
 weibocount = 0
 
 proxy_addr="122.241.72.191:808"
