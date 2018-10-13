@@ -7,7 +7,9 @@ import re
 
 #id='2360812967'#可以通过昵称查找id
 count = 0
-scraw_ID = set(['2360812967',])#待爬id
+#scraw_ID = set(['2360812967',])#待爬id
+scraw_ID = set(['2625677020',])#待爬id
+
 finish_ID = set()#已爬id 120.79.245.47
 weibocount = 0
 
@@ -19,30 +21,40 @@ def use_proxy(url,proxy_addr):
     proxy=urllib.request.ProxyHandler({'http':proxy_addr})
     opener=urllib.request.build_opener(proxy,urllib.request.HTTPHandler)
     urllib.request.install_opener(opener)
-    data=urllib.request.urlopen(req).read().decode('utf-8','ignore')
-    return data
+    while True:
+        try:
+            data=urllib.request.urlopen(req,timeout=10).read().decode('utf-8','ignore')
+        except Exception as e:
+            print("request failed")
+            print(e)
+        else:
+            print("request succeed")
+            return data
 
 def get_containerid(id):
     url='https://m.weibo.cn/api/container/getIndex?type=uid&value='+id
     data=use_proxy(url,proxy_addr)
     content=json.loads(data).get('data')
-    print('get_containerid')
-    if content.get('tabsInfo') is not None:
+    try:
         for data in content.get('tabsInfo').get('tabs'):
             if(data.get('tab_type')=='weibo'):
                 containerid=data.get('containerid')
                 return containerid
-    else:
+    except Exception as e:
+        print(e)
         print('containerid is None!')
 
 def get_lfid(id):
     url='https://m.weibo.cn/api/container/getIndex?type=uid&value='+id
     data=use_proxy(url,proxy_addr)
     #content=json.loads(data).get('data')
-    result=re.search('lfid=.*?(\d+)',data,re.S)
-    if result:
+    result=re.search(r'lfid=.*?(\d+)',data,re.S)
+    try:
         containerid = result.group(1)
         return containerid
+    except Exception as e:
+        print(e)
+        print('lfid not found!')
 
 
 def get_userInfo(id):
@@ -72,6 +84,7 @@ def get_weibo(id,file):
             #guanzhu_url = 'https://m.weibo.cn/api/container/getSecond?containerid='+get_containerid(id)+'_-_FOLLOWERS&page='+str(i)
             try:
                 data=use_proxy(weibo_url,proxy_addr)
+                
                 content=json.loads(data).get('data')
                 cards=content.get('cards')
                 if(len(cards)>0):
@@ -79,64 +92,10 @@ def get_weibo(id,file):
                         weibocount+=1
                         save_content(item)#以后可以考虑存储图片url
                     i+=1
+                    print('page:'+str(i))
                 else:
                     break
 
-                '''
-                cards=content.get('cards')
-                print("-----No"+str(i)+"page------")
-                if(len(cards)>0):
-                    
-                    for j in range(len(cards)):
-                        #print("-----No"+str(i)+"page,No"+str(j)+"weibo------")
-                        global count
-                        count+=1
-                        print(count)
-                        card_type=cards[j].get('card_type')
-                        if(card_type==9):
-                            mblog=cards[j].get('mblog')
-                            mblog_id = mblog.get('id')
-                            attitudes_count=mblog.get('attitudes_count')
-                            comments_count=mblog.get('comments_count')
-                            created_at=mblog.get('created_at')
-                            reposts_count=mblog.get('reposts_count')
-                            scheme=cards[j].get('scheme')
-                            text=mblog.get('text')
-                            
-                            with open(file,'a',encoding='utf-8') as fh:
-                                fh.write("----No"+str(i)+"page,No"+str(j)+"weibo----"+"\n")
-                                #fh.write("weibo addr:"+str(scheme)+"\n"+"sub time:"+str(created_at)+"\n"+"sub content:"+text+"\n"+"attitudes_count:"+str(attitudes_count)+"\n"+"comments_count:"+str(comments_count)+"\n"+"reposts_count:"+str(reposts_count)+"\n")
-                                fh.write("weibo addr:"+str(scheme)+"\n"+"sub time:"+str(created_at)+"\n"+"sub content:"+text+"\n")
-                            
-                            
-                            #-----------------------------------------------------------------
-                            
-                            k = 1
-                            single_weibo_url='https://m.weibo.cn/api/comments/show?id='+mblog_id+'&page='+str(k)
-                            try:
-                                data1=use_proxy(single_weibo_url,proxy_addr)
-                                #print(data1)
-                                is_ok=json.loads(data1).get("ok")   
-                                #print(is_ok)
-                                if is_ok==1:
-                                    
-                                    content1=json.loads(data1).get('data')   
-                                    data=content1.get('data')
-                                    for l in range(len(data)):
-                                        comment = data[l].get('text')
-                                        with open(file,'a',encoding='utf-8') as fh:
-                                            fh.write("------------------------comment------------------"+"\n")
-                                            fh.write("weibo comment:"+str(comment)+"\n")
-                                    
-                            except Exception as e:
-                                print(e)
-                                pass
-                
-                    
-                    #i+=1   
-                else:
-                    break
-            '''
             except Exception as e:
                 print(e)
                 pass
